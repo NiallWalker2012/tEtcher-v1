@@ -29,9 +29,12 @@ fn main() -> std::io::Result<()> {
             vec!["Error reading directory".to_string()]
         };
 
+        //Added "[Exit]" option for easy exit access
+        menu_items.insert(0, "[Exit]".to_string());
+
         // Add a "Back" option if not at root
         if current_dir.parent().is_some() {
-            menu_items.insert(0, "[Back]".to_string());
+            menu_items.insert(1, "[Back]".to_string());
         }
 
         // Adjust selection if needed
@@ -51,16 +54,24 @@ fn main() -> std::io::Result<()> {
             execute!(stdout, cursor::MoveTo(0, (i + 1) as u16))?;
             execute!(stdout, terminal::Clear(ClearType::CurrentLine))?;
 
-            // Determine styling
+            /// Determine styling
+            /// 
+            /// To change the type of colour, edit the associated item edit
             let display_item = if item == "[Back]" {
+                //Display item will be green and bold
                 item.clone().with(Color::Green).bold().to_string()
+            } else if item == "[Exit]" {
+                //Display item will be red and bold
+                item.clone().with(Color::Red).bold().to_string()
             } else if current_dir.join(item).is_dir() {
+                //Display item will be blue and bold if a folder
                 item.clone().with(Color::Blue).bold().to_string()
             } else {
+                //No styling
                 item.clone()
             };
 
-            // Highlight selected
+            // Highlight selected option
             if i == selected {
                 print!("  {}", display_item.on_white().black());
             } else {
@@ -70,23 +81,36 @@ fn main() -> std::io::Result<()> {
 
         stdout.flush()?;
 
-        // Handle input
+        /// Here is the handle for user input
+        /// 
+        /// You can edit the used keys by swapping the Keycode::x section
+        /// 
+        /// For example, if you want to have side keys instead of up and down,
+        /// change KeyCode::Up to Keycode::Right and vice versa
         if let Event::Key(event) = event::read()? {
             match event.code {
+                //Move selected item up when Up-arrow is pressed
                 KeyCode::Up => {
                     if selected > 0 {
                         selected -= 1;
                     }
                 }
+                //Move selected item down when down-arrow is pressed
                 KeyCode::Down => {
-                    if selected < menu_items.len().saturating_sub(1) {
+                    if selected < menu_items.len().saturating_sub(1) { // .len() and .saturating_sub(1) checks that the selected item is not greater than menu items
                         selected += 1;
                     }
                 }
                 KeyCode::Enter => {
                     let selected_item = &menu_items[selected];
+                    // If the user selected [Exit]
+                    if selected_item == "[Exit]" {
+                        execute!(stdout, cursor::Show)?;
+                        disable_raw_mode()?;
+                        return Ok(())
+                    } 
 
-                    if selected_item == "[Back]" {
+                    else if selected_item == "[Back]" {
                         if let Some(parent) = current_dir.parent() {
                             current_dir = parent.to_path_buf();
                             selected = 0;
