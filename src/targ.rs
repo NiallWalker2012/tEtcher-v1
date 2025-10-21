@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use std::fs;
 use std::io::{self, Result, Write, stdout};
 use std::path::PathBuf;
@@ -15,81 +17,162 @@ use crossterm::{
         Event
     },
 };
+use std::process::Command;
 
-#[cfg(target_os = "windows")]
-fn list_external_devices() -> Result<Vec<PathBuf>> {
-    let mut devices = Vec::new();
-    for drive in 'A'..='Z' {
-        let path = format!("{}:\\", drive);
-        if fs::metadata(&path).is_ok() {
-            devices.push(PathBuf::from(path));
+fn list_flashable_drives_windows() -> Vec<String> {
+    let mut drives = Vec::new();
+
+    let output = Command::new("wmic")
+        .args(["diskdrive", "where", "MediaType='Removable Media'", "get", "DeviceID"])
+        .output()
+        .expect("failed to run wmic");
+
+    let text = String::from_utf8_lossy(&output.stdout);
+
+    for line in text.lines() {
+        let trimmed = line.trim();
+        if trimmed.starts_with("\\\\.\\") {
+            drives.push(trimmed.to_string());
         }
     }
-    Ok(devices)
+
+    drives
 }
 
-#[cfg(any(target_os = "linux", target_os = "macos"))]
-fn list_external_devices() -> Result<Vec<PathBuf>> {
-    #[cfg(target_os = "linux")]
-    let mount_point = "/media";
+fn list_flashable_drives_macos() -> Vec<String> {
+    let mut drives = Vec::new();
 
-    #[cfg(target_os = "macos")]
-    let mount_point = "/Volumes";
+    let output = Command::new("diskutil")
+        .arg("list")
+        .output()
+        .expect("failed to run diskutil");
 
-    let mut devices = Vec::new();
-    for entry in fs::read_dir(mount_point)? {
+    let text = String::from_utf8_lossy(&output.stdout);
+
+    for line in text.lines() {
+        if line.contains("external, physical") {
+            if let Some(disk_name) = line.split_whitespace().next() {
+                drives.push(disk_name.to_string());
+            }
+        }
+    }
+
+    drives
+}
+
+fn list_flashable_drives_linux() -> Result<Vec<String>> {
+    let mut drives = Vec::new();
+
+
+    for entry in fs::read_dir("/sys/block")? {
         let entry = entry?;
-        let path = entry.path();
-        if path.is_dir() {
-            devices.push(path);
+        let dev_name = entry.file_name();
+        let path = format!("/sys/block/{}/removable", dev_name.to_string_lossy());
+        if let Ok(contents) = fs::read_to_string(&path) {
+            if contents.trim() == "1" {
+                // This is a removable device (like a USB)
+                drives.push(format!("/dev/{}", dev_name.to_string_lossy()));
+            }
         }
     }
-    Ok(devices)
+    Ok(drives)
 }
 
-pub fn menu(_file_in: &PathBuf) -> Result<()> {
+
+pub fn menu(file_in: &PathBuf) -> Result<()> {
     print!("\x1B[H\x1B[2J");
     io::stdout().flush()?;
 
     let mut extselected = 0;
     let mut stdout = stdout();
 
-    let extdevs = list_external_devices()?; // now this is Vec<PathBuf>
-    println!("External devices found:");
+    #[cfg(target_os = "windows")]
+    let extdevs = list_flashable_drives_windows();
+
+    #[cfg(target_os = "macos")]
+    let extdevs = list_flashable_drives_macos();
+   
+    #[cfg(target_os = "linux")]
+    let extdevs = list_flashable_drives_linux()?;
+
     
-    for (i, item) in extdevs.iter().enumerate() {
-        execute!(stdout, cursor::MoveTo(0, (i + 2) as u16))?;
-        execute!(stdout, terminal::Clear(ClearType::CurrentLine))?;
-        if i == extselected {
-            print!("  {}", item.to_string_lossy().on_white().black());
-        } else {
-            print!("  {}", item.display());
+    loop {
+        println!("External devices found:");
+        
+        for (i, item) in extdevs.iter().enumerate() {
+            execute!(stdout, cursor::MoveTo(0, (i + 2) as u16))?;
+            execute!(stdout, terminal::Clear(ClearType::CurrentLine))?;
+            if i == extselected {
+                print!("  {}", item.clone().on_white().black());
+            } else {
+                print!("  {}", item);
+            }
+        }
+
+        stdout.flush()?;
+
+        if let Event::Key(ev) = event::read()? {
+            match ev.code {
+                KeyCode::Up => {
+                    if extselected > 0 {
+                        extselected -= 1;
+                    }
+                }
+                KeyCode::Down => {
+                    if extselected < extdevs.len() - 1 {
+                        extselected += 1;
+                    }
+                }
+                KeyCode::Enter => {
+                    let mut confselected: usize = 0;
+                    let conf: Vec<&str> = vec!["Yes", "No"];
+                    let selected_device = extdevs[extselected].clone();
+
+                    loop {
+                        print!("\x1B[H\x1B[2J");
+                        println!("Do you want to flash {} to {}?", file_in.to_string_lossy(), selected_device);
+                        for (i, confitem) in conf.iter().enumerate() {
+                            execute!(stdout, cursor::MoveTo(0, (i + 2) as u16))?;
+                            execute!(stdout, terminal::Clear(ClearType::CurrentLine))?;
+                            if i == confselected.try_into().unwrap() {
+                                print!("{}", confitem.on_white().black());
+                            } else {
+                                print!("{}", confitem);
+                            }
+                        }
+                        
+                        stdout.flush()?;
+
+                        if let Event::Key(confev) = event::read()? {
+                            match confev.code {
+                                KeyCode::Up => {
+                                    if confselected > 0 {
+                                        confselected -= 1;
+                                    }
+                                }
+                                KeyCode::Down => {
+                                    if confselected < conf.len() - 1 {
+                                        confselected += 1;
+                                    }
+                                }
+                                KeyCode::Enter => {
+                                    match confselected {
+                                        0 => {
+                                            println!("Cool!");
+                                            return Ok(())
+                                        }
+                                        1 => break,
+                                        _ => {}
+                                    }
+                                }
+                                _ => {}
+                            }
+                        }
+                    }
+                }
+                KeyCode::Esc | KeyCode::Char('q') => return Ok(()),
+                _ => {}
+            }
         }
     }
-
-    stdout.flush()?;
-
-    if let Event::Key(ev) = event::read()? {
-        match ev.code {
-            KeyCode::Up => {
-                if extselected > 0 {
-                    extselected -= 1;
-                }
-            }
-            KeyCode::Down => {
-                if extselected < extdevs.len() - 1 {
-                    extselected += 1;
-                }
-            }
-            KeyCode::Enter => {
-                
-            }
-            KeyCode::Esc => return Ok(()),
-            _ => {}
-        }
-    }
-
-    println!("\nPress any button to continue...");
-    let _ = event::read();
-    Ok(())
 }

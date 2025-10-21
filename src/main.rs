@@ -1,3 +1,6 @@
+#![allow(unused_doc_comments)]
+
+
 use crossterm::{
     cursor,
     event::{self, Event, KeyCode},
@@ -107,7 +110,7 @@ fn main() -> std::io::Result<()> {
                     if selected_item == "[Exit]" {
                         execute!(stdout, cursor::Show)?;
                         disable_raw_mode()?;
-                        return Ok(())
+                        break;
                     } 
 
                     else if selected_item == "[Back]" {
@@ -125,6 +128,7 @@ fn main() -> std::io::Result<()> {
                         continue;
                     }
 
+                    let mut stdout = std::io::stdout();
                     // File selected: confirmation
                     let confirm_options = ["Yes", "No"];
                     let mut confselected = 0;
@@ -173,7 +177,6 @@ fn main() -> std::io::Result<()> {
                         }
                     }
                 }
-                KeyCode::Esc | KeyCode::Char('q') | KeyCode::Char('Q') => break,
                 _ => {}
             }
         }
