@@ -18,6 +18,7 @@ use crossterm::{
     },
 };
 use std::process::Command;
+use crate::flash;
 
 fn list_flashable_drives_windows() -> Vec<String> {
     let mut drives = Vec::new();
@@ -158,7 +159,7 @@ pub fn menu(file_in: &PathBuf) -> Result<()> {
                                 KeyCode::Enter => {
                                     match confselected {
                                         0 => {
-                                            println!("Cool!");
+                                            let _ = flash::menu(&file_in.to_string_lossy(), &selected_device);
                                             return Ok(())
                                         }
                                         1 => break,

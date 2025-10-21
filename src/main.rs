@@ -12,6 +12,7 @@ use std::fs;
 use std::io::{stdout, Write};
 
 mod targ;
+mod flash;
 
 fn main() -> std::io::Result<()> {
     let mut selected = 0;
