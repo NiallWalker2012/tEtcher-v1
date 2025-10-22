@@ -7,10 +7,6 @@ use std::io::{
 };
 use std::time::Instant;
 
-pub fn menu(iso: &str, device: &str) -> Result<()> {
-    let _ = flash_iso(iso, device);
-    Ok(())
-}
 
 /// Flashes an ISO image to a raw device, showing percentage progress.
 ///
@@ -21,6 +17,12 @@ pub fn menu(iso: &str, device: &str) -> Result<()> {
 /// # Notes
 /// - Overwrites the device completely. Use with caution!
 /// - Root/Administrator permissions are required
+
+pub fn menu(iso: &str, device: &str) -> Result<()> {
+    let _ = flash_iso(iso, device);
+    Ok(())
+}
+
 
 fn flash_iso(iso_path: &str, device_path: &str) -> Result<()> {
     let bs: usize = 4; //Variable of bs is to adjust the block size (in MB)
