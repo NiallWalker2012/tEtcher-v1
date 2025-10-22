@@ -7,7 +7,6 @@ use std::io::{
 };
 use std::time::Instant;
 
-
 /// Flashes an ISO image to a raw device, showing percentage progress.
 ///
 /// # Arguments
