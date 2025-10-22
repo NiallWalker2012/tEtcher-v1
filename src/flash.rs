@@ -1,4 +1,7 @@
-use std::fs::File;
+use std::fs::{
+    File,
+    OpenOptions
+};
 use std::io::{
     Read,
     Write,
@@ -24,11 +27,15 @@ pub fn menu(iso: &str, device: &str) -> Result<()> {
 
 
 fn flash_iso(iso_path: &str, device_path: &str) -> Result<()> {
+    println!("\x1B[H\x1B[2J");
+
     let bs: usize = 4; //Variable of bs is to adjust the block size (in MB)
     let buffer_size: usize = bs * 1024 * 1024;
 
     let mut iso_file = File::open(iso_path)?; //Opens ISO file for reading
-    let mut device_file = File::create(device_path)?;
+    let mut device_file = OpenOptions::new()
+        .write(true)
+        .open(device_path)?;
 
     //Get Size of the ISO file
     let iso_size = iso_file.metadata()?.len();
@@ -50,13 +57,13 @@ fn flash_iso(iso_path: &str, device_path: &str) -> Result<()> {
 
         //Print percentage of file written
         let percent_written = (written as f64 / iso_size as f64) * 100.0;
-        print!("\rProgress: {}", percent_written);
+        print!("\rProgress: {:>6.2}%", percent_written);
         Write::flush(&mut stdout())?;
     }
 
     device_file.flush()?;
     let elapsed = time.elapsed();
     println!("\n Flash completed in {:.2?} seconds", elapsed);
-
+    
     Ok(())
 }

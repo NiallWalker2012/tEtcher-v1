@@ -3,6 +3,7 @@
 use std::fs;
 use std::io::{self, Result, Write, stdout};
 use std::path::PathBuf;
+use crossterm::terminal::disable_raw_mode;
 use crossterm::{
     execute,
     cursor,
@@ -23,10 +24,10 @@ use crate::flash;
 fn list_flashable_drives_windows() -> Vec<String> {
     let mut drives = Vec::new();
 
-    let output = Command::new("wmic")
-        .args(["diskdrive", "where", "MediaType='Removable Media'", "get", "DeviceID"])
-        .output()
-        .expect("failed to run wmic");
+    let output = Command::new("powershell")
+    .args(["-Command", "Get-CimInstance Win32_DiskDrive | Where-Object { $_.MediaType -eq 'Removable Media' } | Select-Object -ExpandProperty DeviceID"])
+    .output()
+    .expect("failed to run PowerShell command");
 
     let text = String::from_utf8_lossy(&output.stdout);
 
@@ -87,14 +88,40 @@ pub fn menu(file_in: &PathBuf) -> Result<()> {
     let mut extselected = 0;
     let mut stdout = stdout();
 
-    #[cfg(target_os = "windows")]
-    let extdevs = list_flashable_drives_windows();
+    let extdevs: Vec<String>;
 
-    #[cfg(target_os = "macos")]
-    let extdevs = list_flashable_drives_macos();
+    #[cfg(target_os = "windows")] {
+        extdevs = list_flashable_drives_windows();
+
+        if extdevs.is_empty() {
+            println!("No removable drives detected.");
+            println!("Insert a USB drive and restart the program.");
+            return Ok(());
+        }
+    }
+
+    #[cfg(target_os = "macos")] {
+        extdevs = list_flashable_drives_macos();
+
+        if extdevs.is_empty() {
+        println!("No removable drives detected.");
+        println!("Insert a USB drive and restart the program.");
+        return Ok(());
+    }
+}
    
-    #[cfg(target_os = "linux")]
-    let extdevs = list_flashable_drives_linux()?;
+    #[cfg(target_os = "linux")] {
+    extdevs = list_flashable_drives_linux()?;
+
+    if extdevs.is_empty() {
+        println!("No removable drives detected.");
+        println!("Insert a USB drive and restart the program.");
+        return Ok(());
+    }
+
+    let verify = ["yes", "no"];
+}
+
 
     
     loop {
@@ -144,6 +171,8 @@ pub fn menu(file_in: &PathBuf) -> Result<()> {
                         
                         stdout.flush()?;
 
+                        use std::process::exit;
+
                         if let Event::Key(confev) = event::read()? {
                             match confev.code {
                                 KeyCode::Up => {
@@ -159,10 +188,19 @@ pub fn menu(file_in: &PathBuf) -> Result<()> {
                                 KeyCode::Enter => {
                                     match confselected {
                                         0 => {
-                                            let _ = flash::menu(&file_in.to_string_lossy(), &selected_device);
-                                            return Ok(())
+                                             // Clear menu UI
+                                            execute!(stdout, terminal::Clear(ClearType::All), cursor::MoveTo(0,0))?;
+                                            
+                                            // Run flashing directly here so the menu doesn’t redraw until done
+                                            flash::menu(&file_in.to_string_lossy(), &selected_device)?;
+
+                                            disable_raw_mode()?;
+                                            execute!(stdout, cursor::Show)?;
+                                            exit(0); // Exits program once finished
                                         }
-                                        1 => break,
+                                        1 => {
+                                            exit(0);
+                                        }
                                         _ => {}
                                     }
                                 }
