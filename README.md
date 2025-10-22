@@ -6,7 +6,7 @@ It is inspired by well-known ISO flashers like dd and BalenaEtcher
 tEtcher uses the rust cargo package manager. You will need to copy the first time installation file and run it in the terminal.  
 A run file is attached so you can run it easily    
 If you are on Windows, enter 'chmod +x "win_run.bat" in the terminal and then "./win_run.bat"  
-If you are on Linux macOS, enter chmod +x "shell_run.sh" amd "./shell_run.sh"  
+If you are on Linux macOS, enter chmod +x "shell_run.sh" and "./shell_run.sh"  
 
 
 # Dependancies 
