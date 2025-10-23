@@ -1,9 +1,9 @@
 # tEtcher 
-tEtcher is a terminal based ISO flasher designed to have the speed of cli commands like dd, but also an easier UI  
+tEtcher is an open-source terminal based ISO flasher designed to have the speed of cli commands like dd, but also an easier UI  
 It is inspired by well-known ISO flashers like dd and BalenaEtcher
 
 
-# How to run   
+# How to run:  
 
 
 # Dependancies to run
@@ -41,6 +41,6 @@ On Linux, run "sudo apt install cargo" and verify the same way
 5. Make the file executable with the command "chmod +x shell_run.sh". You only need to do this once
 6. Run with the command "./shell_run.sh"  
 
- 
+
 In the future I will integrate a verification option that verifies that the ISO on your computer matches the flashed image on the USB
 

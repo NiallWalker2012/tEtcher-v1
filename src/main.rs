@@ -13,6 +13,7 @@ use std::io::{stdout, Write};
 
 mod targ;
 mod flash;
+mod verify;
 
 /// To run this program, go to the README.md and follow the steps
 /// 

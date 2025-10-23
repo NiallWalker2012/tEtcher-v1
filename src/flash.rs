@@ -2,6 +2,23 @@ use std::fs::{
     File,
     OpenOptions
 };
+use crossterm::{
+    execute,
+    terminal::{
+        self,
+        ClearType
+    },
+    cursor,
+    style::{
+        Color,
+        Stylize
+    },
+    event::{
+        self,
+        KeyCode,
+        Event
+    },
+};
 use std::io::{
     Read,
     Write,
@@ -9,6 +26,7 @@ use std::io::{
     stdout
 };
 use std::time::Instant;
+use crate::verify;
 
 /// Flashes an ISO image to a raw device, showing percentage progress.
 ///
@@ -22,6 +40,64 @@ use std::time::Instant;
 
 pub fn menu(iso: &str, device: &str) -> Result<()> {
     let _ = flash_iso(iso, device);
+    
+    let mut stdout = stdout();
+
+    let verify: Vec<&str> = vec!["Yes", "No"];
+    let mut selected = 0;
+
+    loop {
+        // Adjust selection if needed
+        if selected >= verify.len() {
+            selected = verify.len().saturating_sub(1);
+        }
+
+        // Draw UI
+        execute!(
+            stdout,
+            cursor::MoveTo(0, 0),
+            terminal::Clear(ClearType::FromCursorDown)
+        )?;
+        println!("{}", "Please navigate to the file you wish to flash".with(Color::Blue));
+
+        for (i, item) in verify.iter().enumerate() {
+            execute!(stdout, cursor::MoveTo(0, (i + 1) as u16))?;
+            execute!(stdout, terminal::Clear(ClearType::CurrentLine))?;
+
+            if i == selected {
+                print!("{}", item.on_white().black());
+            } else {
+                print!("{}", item);
+            }
+        }
+        stdout.flush()?;
+
+        if let Event::Key(event) = event::read()? {
+            match event.code {
+                //Move selected item up when Up-arrow is pressed
+                KeyCode::Up => {
+                    if selected > 0 {
+                        selected -= 1;
+                    }
+                }
+                //Move selected item down when down-arrow is pressed
+                KeyCode::Down => {
+                    if selected < verify.len().saturating_sub(1) { // .len() and .saturating_sub(1) checks that the selected item is not greater than menu items
+                        selected += 1;
+                    }
+                }
+                KeyCode::Enter => {
+                    match selected {
+                        0 => verify::verify(&iso, &device),
+                        1 => break,
+                        _ => break,
+                    }
+                }
+                _ => {}
+            }
+        }
+    }
+
     Ok(())
 }
 
