@@ -14,6 +14,13 @@ use std::io::{stdout, Write};
 mod targ;
 mod flash;
 
+/// To run this program, go to the README.md and follow the steps
+/// 
+/// This program will list all directories and files, letting you move around your computer's files like a file explorer
+/// When a file is chosen, it will ask if '/folder/file' is the correct path, and then procede to targ.rs
+/// 
+/// Navigate using the arrow-keys to move up and down, and enter key to select
+
 fn main() -> std::io::Result<()> {
     let mut selected = 0;
     let mut current_dir = std::env::current_dir()?; // Track current directory

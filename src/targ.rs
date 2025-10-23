@@ -14,6 +14,14 @@ use crossterm::{
 use std::process::Command;
 use crate::flash;
 
+/// targ.rs will list all external drives and their model names to select from
+/// 
+/// For example, on windows it might list: "\\.\PHYSICALDRIVE1 - SanDisk Ultra USB 64G"
+/// 
+/// If there are no external devices found, it will print "No removeable drives found
+///                                                        Please plug in a USB and restart the program"
+
+
 /// Unified structure for displaying drives
 #[derive(Debug, Clone)]
 struct DriveInfo {
@@ -261,7 +269,8 @@ pub fn menu(file_in: &PathBuf) -> Result<()> {
                                         flash::menu(&file_in.to_string_lossy(), &selected_device.path)?;
                                         disable_raw_mode()?;
                                         execute!(stdout, cursor::Show)?;
-                                        exit(0);
+                                        std::process::exit(0);
+
                                     }
                                     1 => exit(0),
                                     _ => {}
