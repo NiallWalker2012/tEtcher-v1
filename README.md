@@ -4,6 +4,8 @@ It is inspired by well-known ISO flashers like dd and BalenaEtcher
 
 
 # How to run   
+
+
 # Dependancies to run
 There are a few packages necessary to run tEtcher  
 These include:
