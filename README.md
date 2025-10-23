@@ -41,11 +41,6 @@ On Linux, run "sudo apt install cargo" and verify the same way
 5. Make the file executable with the command "chmod +x shell_run.sh". You only need to do this once
 6. Run with the command "./shell_run.sh"  
 
-
-# Dependancies 
-As tEtcher is made using the Cargo rust compiler and package manager, you will need to install cargo before running  
-In most cases, the terminal will tell you how to install cargo if you just enter cargo / cargo --version  
-
-
+ 
 In the future I will integrate a verification option that verifies that the ISO on your computer matches the flashed image on the USB
 
