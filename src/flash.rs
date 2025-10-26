@@ -22,7 +22,7 @@ pub fn menu(iso: &str, device: &str) -> Result<()> {
 
     loop {
         execute!(stdout, cursor::MoveTo(0, 0), terminal::Clear(ClearType::FromCursorDown))?;
-        println!("{}", "Do you wish to flash the ISO?".blue().bold());
+        println!("{}", "Do you wish to flash the ISO? (THIS WILL OVERWRITE *ALL* DISK CONTENTS)".blue().bold());
 
         for (i, item) in warn.iter().enumerate() {
             execute!(stdout, cursor::MoveTo(0, (i + 1) as u16))?;

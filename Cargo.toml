@@ -4,5 +4,11 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-crossterm = "0.28"
 sha2 = "0.10"
+crossterm = "0.27"
+
+# Required only for Windows builds
+[target.'cfg(windows)'.dependencies]
+winapi = { version = "0.3", features = ["winbase"] }
+
+

@@ -23,6 +23,7 @@ mod verify;
 /// Navigate using the arrow-keys to move up and down, and enter key to select
 
 fn main() -> std::io::Result<()> {
+    
     let mut selected = 0;
     let mut current_dir = std::env::current_dir()?; // Track current directory
 
