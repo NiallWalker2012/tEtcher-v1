@@ -5,16 +5,15 @@ use std::time::Instant;
 use crossterm::terminal::disable_raw_mode;
 use crossterm::{
     execute,
-    terminal::{self, ClearType},
+    terminal::{self, ClearType, enable_raw_mode},
     cursor,
     style::{Stylize},
     event::{self, Event, KeyCode},
 };
-
 use crate::verify;
 
 pub fn menu(iso: &str, device: &str) -> Result<()> {
-    terminal::enable_raw_mode()?;
+    enable_raw_mode()?;
     let mut stdout = stdout();
 
     let warn = vec!["Yes", "No"];
