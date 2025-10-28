@@ -1,6 +1,6 @@
-# tEtcher 
-tEtcher is an open-source terminal based ISO flasher designed to have the speed of cli commands like dd, but also an easier UI  
-It is inspired by well-known ISO flashers like dd and BalenaEtcher
+# tEtcher v1 (new version available)
+tEtcher is an open-source Rust-based terminal based ISO flasher designed to have the speed of cli commands like dd, but also an easier UI  
+It is inspired by well-known ISO flashers like dd and BalenaEtcher. For a faster, more user friendly version, check out https://github.com/NiallWalker2012/tEtcher-v2
 
 
 # How to run:  
